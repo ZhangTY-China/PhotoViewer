@@ -1,0 +1,150 @@
+using System;
+using System.IO;
+using System.Threading;
+using System.Collections.Concurrent;
+
+namespace PhotoViewer;
+
+public static class Logger
+{
+    private static readonly string LogDirectory = Path.GetFullPath("Logs");
+    private const string LogFileName = "app.log";
+    private const long MaxFileSize = 5 * 1024 * 1024; // 5MB
+    private const int MaxBackupFiles = 10;
+    private static readonly BlockingCollection<string> LogQueue = new();
+    private static readonly Thread LogThread;
+
+    static Logger()
+    {
+        Directory.CreateDirectory(LogDirectory);
+
+        LogThread = new Thread(ProcessLogQueue)
+        {
+            IsBackground = true,
+            Priority = ThreadPriority.BelowNormal
+        };
+        LogThread.Start();
+
+        AppDomain.CurrentDomain.ProcessExit += (s, e) => Shutdown();
+    }
+
+    public static void Shutdown()
+    {
+        LogQueue.CompleteAdding();
+        LogThread?.Join(1000);
+    }
+
+    public static void i(string tag, string message)
+    {
+        Log(tag, message, LogLevel.Info);
+    }
+    public static void e(string tag, string message)
+    {
+        Log(tag, message, LogLevel.Error);
+    }
+    public static void d(string tag, string message)
+    {
+        Log(tag, message, LogLevel.Debug);
+    }
+    public static void w(string tag, string message)
+    {
+        Log(tag, message, LogLevel.Warning);
+    }
+
+    private static void Log(string tag, string message, LogLevel level = LogLevel.Info)
+    {
+        try
+        {
+            var logEntry = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff} [{level}] [{tag}] {message}";
+            LogQueue.Add(logEntry);
+        }
+        catch (Exception ex)
+        {
+            // 如果日志队列已满或关闭，直接写入错误日志
+            try
+            {
+                File.AppendAllText(Path.Combine(LogDirectory, "logger_error.log"), 
+                    $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} [LoggerError] Failed to log: {ex.Message}{Environment.NewLine}");
+            }
+            catch { /* 防止无限循环 */ }
+        }
+    }
+
+    private static void ProcessLogQueue()
+    {
+        var logPath = Path.Combine(LogDirectory, LogFileName);
+
+        foreach (var logEntry in LogQueue.GetConsumingEnumerable())
+        {
+            try
+            {
+                File.AppendAllText(logPath, logEntry + Environment.NewLine);
+
+                // 检查文件大小并执行轮转
+                var fileInfo = new FileInfo(logPath);
+                if (fileInfo.Length > MaxFileSize)
+                {
+                    RotateLogFiles();
+                }
+            }
+            catch (Exception ex)
+            {
+                try
+                {
+                    File.AppendAllText(Path.Combine(LogDirectory, "logger_error.log"), 
+                        $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} [LoggerError] {ex}{Environment.NewLine}");
+                }
+                catch { /* 防止无限循环 */ }
+            }
+        }
+    }
+
+    private static void RotateLogFiles()
+    {
+        try
+        {
+            // 删除最旧的备份文件
+            var oldestBackup = Path.Combine(LogDirectory, $"{LogFileName}.{MaxBackupFiles}");
+            if (File.Exists(oldestBackup))
+            {
+                File.Delete(oldestBackup);
+            }
+
+            // 重命名其他备份文件
+            for (int i = MaxBackupFiles - 1; i >= 1; i--)
+            {
+                var oldFile = Path.Combine(LogDirectory, $"{LogFileName}.{i}");
+                var newFile = Path.Combine(LogDirectory, $"{LogFileName}.{i + 1}");
+                if (File.Exists(oldFile))
+                {
+                    File.Move(oldFile, newFile);
+                }
+            }
+
+            // 重命名当前日志文件
+            var currentLog = Path.Combine(LogDirectory, LogFileName);
+            var firstBackup = Path.Combine(LogDirectory, $"{LogFileName}.1");
+            if (File.Exists(currentLog))
+            {
+                File.Move(currentLog, firstBackup);
+            }
+        }
+        catch (Exception ex)
+        {
+            try
+            {
+                File.AppendAllText(Path.Combine(LogDirectory, "logger_error.log"), 
+                    $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} [LoggerError] Rotate failed: {ex}{Environment.NewLine}");
+            }
+            catch { /* 防止无限循环 */ }
+        }
+    }
+
+    private enum LogLevel
+    {
+        Debug,
+        Info,
+        Warning,
+        Error
+    }
+}

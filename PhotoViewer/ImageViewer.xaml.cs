@@ -23,7 +23,7 @@ namespace PhotoViewer
             }
         }
 
-        public void LoadImage(String path)
+        private void LoadImage(String path)
         {
             var bitmap = new BitmapImage();
             bitmap.BeginInit();
