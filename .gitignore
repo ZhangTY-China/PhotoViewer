@@ -1,0 +1,5 @@
+# 在.gitignore中添加
+.idea
+**/*.g.cs
+**/obj/
+**/bin/
