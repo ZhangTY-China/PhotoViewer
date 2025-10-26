@@ -1,7 +1,5 @@
-using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input;
 using System.Windows.Media.Imaging;
 
 namespace PhotoViewer
@@ -16,14 +14,31 @@ namespace PhotoViewer
         {
             InitializeComponent();
         }
-
         public void LoadImages(List<string> paths)
         {
             imagePaths = paths;
             if (imagePaths.Count > 0)
             {
-                DisplayImage.Source = new BitmapImage(new System.Uri(imagePaths[0]));
+                LoadImage(imagePaths[0]);
             }
+        }
+
+        public void LoadImage(String path)
+        {
+            var bitmap = new BitmapImage();
+            bitmap.BeginInit();
+            bitmap.UriSource = new Uri(path);
+            bitmap.DecodePixelWidth = (int)ImageScrollViewer.ActualWidth;
+            bitmap.EndInit();
+            DisplayImage.Source = bitmap;
+
+            zoomFactor = Math.Min(
+                ImageScrollViewer.ActualWidth / bitmap.PixelWidth,
+                ImageScrollViewer.ActualHeight / bitmap.PixelHeight
+            );
+            
+            DisplayImage.Width = ((BitmapImage)DisplayImage.Source).PixelWidth * zoomFactor;
+            DisplayImage.Height = ((BitmapImage)DisplayImage.Source).PixelHeight * zoomFactor;
         }
 
         private void PreviousImage_Click(object sender, RoutedEventArgs e)
@@ -31,7 +46,7 @@ namespace PhotoViewer
             if (imagePaths.Count == 0) return;
 
             currentIndex = (currentIndex - 1 + imagePaths.Count) % imagePaths.Count;
-            DisplayImage.Source = new BitmapImage(new System.Uri(imagePaths[currentIndex]));
+            LoadImage(imagePaths[currentIndex]);
         }
 
         private void NextImage_Click(object sender, RoutedEventArgs e)
@@ -39,21 +54,21 @@ namespace PhotoViewer
             if (imagePaths.Count == 0) return;
 
             currentIndex = (currentIndex + 1) % imagePaths.Count;
-            DisplayImage.Source = new BitmapImage(new System.Uri(imagePaths[currentIndex]));
+            LoadImage(imagePaths[currentIndex]);
         }
 
         private void ZoomIn_Click(object sender, RoutedEventArgs e)
         {
             zoomFactor *= 1.2;
-            DisplayImage.Width = DisplayImage.Source.Width * zoomFactor;
-            DisplayImage.Height = DisplayImage.Source.Height * zoomFactor;
+            DisplayImage.Width = ((BitmapImage)DisplayImage.Source).PixelWidth * zoomFactor;
+            DisplayImage.Height = ((BitmapImage)DisplayImage.Source).PixelHeight * zoomFactor;
         }
 
         private void ZoomOut_Click(object sender, RoutedEventArgs e)
         {
             zoomFactor /= 1.2;
-            DisplayImage.Width = DisplayImage.Source.Width * zoomFactor;
-            DisplayImage.Height = DisplayImage.Source.Height * zoomFactor;
+            DisplayImage.Width = ((BitmapImage)DisplayImage.Source).PixelWidth * zoomFactor;
+            DisplayImage.Height = ((BitmapImage)DisplayImage.Source).PixelHeight * zoomFactor;
         }
     }
 }

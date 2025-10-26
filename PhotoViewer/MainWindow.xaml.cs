@@ -1,7 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Media.Imaging;
+﻿using System.Windows;
 
 namespace PhotoViewer;
 
@@ -23,9 +20,9 @@ public partial class MainWindow : Window
         // 模拟一些图片路径 - 实际应用中可以从文件对话框或数据库获取
         var imagePaths = new List<string>
         {
-            "C:\\Users\\Public\\Pictures\\Sample Pictures\\Chrysanthemum.jpg",
-            "C:\\Users\\Public\\Pictures\\Sample Pictures\\Desert.jpg",
-            "C:\\Users\\Public\\Pictures\\Sample Pictures\\Hydrangeas.jpg"
+            "F:\\Shot By Z5Ⅱ\\20250726\\DSC_0055.JPG",
+            "F:\\Shot By Z5Ⅱ\\20250726\\DSC_0068.JPG",
+            "F:\\Shot By Z5Ⅱ\\20250726\\DSC_0074.JPG",
         };
 
         imageViewer.LoadImages(imagePaths);
@@ -35,8 +32,8 @@ public partial class MainWindow : Window
         {
             Title = "Image Viewer",
             Content = imageViewer,
-            Width = 800,
-            Height = 600
+            Width = SystemParameters.PrimaryScreenWidth * 0.7,  // 屏幕宽度的70%
+            Height = SystemParameters.PrimaryScreenWidth * 0.7 / 16 * 9, // 屏幕高度的70%
         };
 
         viewerWindow.ShowDialog();
