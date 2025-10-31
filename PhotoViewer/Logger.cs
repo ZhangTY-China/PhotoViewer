@@ -7,9 +7,9 @@ namespace PhotoViewer;
 
 public static class Logger
 {
-    private static readonly string LogDirectory = Path.GetFullPath("Logs");
-    private const string LogFileName = "app.log";
-    private const long MaxFileSize = 5 * 1024 * 1024; // 5MB
+    private static readonly string LogDirectory = Path.GetFullPath("C:\\PhotoViewerLogs");
+    private const long MaxFileSize = 512 * 1024 * 1024; // 5MB
+    private const string LogFileName = "photoviewer_";
     private const int MaxBackupFiles = 10;
     private static readonly BlockingCollection<string> LogQueue = new();
     private static readonly Thread LogThread;
@@ -21,7 +21,7 @@ public static class Logger
         LogThread = new Thread(ProcessLogQueue)
         {
             IsBackground = true,
-            Priority = ThreadPriority.BelowNormal
+            Priority = ThreadPriority.Normal
         };
         LogThread.Start();
 
@@ -72,6 +72,7 @@ public static class Logger
 
     private static void ProcessLogQueue()
     {
+        var LogFileName = Logger.LogFileName + DateTime.Now.ToString("yyyyMMdd") + ".log";
         var logPath = Path.Combine(LogDirectory, LogFileName);
 
         foreach (var logEntry in LogQueue.GetConsumingEnumerable())
@@ -80,12 +81,12 @@ public static class Logger
             {
                 File.AppendAllText(logPath, logEntry + Environment.NewLine);
 
-                // 检查文件大小并执行轮转
-                var fileInfo = new FileInfo(logPath);
-                if (fileInfo.Length > MaxFileSize)
-                {
-                    RotateLogFiles();
-                }
+                // // 检查文件大小并执行轮转
+                // var fileInfo = new FileInfo(logPath);
+                // if (fileInfo.Length > MaxFileSize)
+                // {
+                //     RotateLogFiles();
+                // }
             }
             catch (Exception ex)
             {
@@ -103,6 +104,7 @@ public static class Logger
     {
         try
         {
+            var LogFileName = Logger.LogFileName + DateTime.Now.ToString("yyyyMMdd") + ".log";
             // 删除最旧的备份文件
             var oldestBackup = Path.Combine(LogDirectory, $"{LogFileName}.{MaxBackupFiles}");
             if (File.Exists(oldestBackup))

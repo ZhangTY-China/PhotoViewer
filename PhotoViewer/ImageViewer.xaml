@@ -6,15 +6,12 @@
              xmlns:local="clr-namespace:PhotoViewer"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
+    
     <Grid>
         <ScrollViewer Name="ImageScrollViewer" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
-            <Image Name="DisplayImage" Stretch="Uniform"/>
+            <Image Name="DisplayImage" Stretch="None" RenderOptions.BitmapScalingMode="HighQuality"/>
         </ScrollViewer>
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Bottom">
-            <Button Content="Previous" Margin="5" Click="PreviousImage_Click"/>
-            <Button Content="Next" Margin="5" Click="NextImage_Click"/>
-            <Button Content="Zoom In" Margin="5" Click="ZoomIn_Click"/>
-            <Button Content="Zoom Out" Margin="5" Click="ZoomOut_Click"/>
         </StackPanel>
     </Grid>
 </UserControl>

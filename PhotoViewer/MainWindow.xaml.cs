@@ -7,8 +7,10 @@ namespace PhotoViewer;
 /// </summary>
 public partial class MainWindow : Window
 {
+    private const string TAG = "MainWindow";
     public MainWindow()
     {
+        Logger.i(TAG, "App init");
         InitializeComponent();
     }
 
@@ -22,11 +24,16 @@ public partial class MainWindow : Window
         {
             "F:\\Shot By Z5Ⅱ\\20250726\\DSC_0055.JPG",
             "F:\\Shot By Z5Ⅱ\\20250726\\DSC_0068.JPG",
-            "F:\\Shot By Z5Ⅱ\\20250726\\DSC_0074.JPG",
+            "F:\\Shot By Z5Ⅱ\\20251001_无锡\\DSC_1176.JPG",
         };
-
-        imageViewer.LoadImages(imagePaths);
-
+        
+        // 订阅 Loaded 事件
+        imageViewer.Loaded += (sender, e) =>
+        {
+            // 在这里调用你的函数
+            imageViewer.LoadImages(imagePaths);
+        };
+        
         // 创建新窗口显示图片查看器
         var viewerWindow = new Window
         {
