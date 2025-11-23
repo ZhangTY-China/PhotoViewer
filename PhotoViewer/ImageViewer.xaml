@@ -8,10 +8,10 @@
              d:DesignHeight="450" d:DesignWidth="800">
     
     <Grid>
+        <!-- 增加一个图片查看视图，并指定该视图可以被垂直、水平滚动 -->
         <ScrollViewer Name="ImageScrollViewer" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
-            <Image Name="DisplayImage" Stretch="None" RenderOptions.BitmapScalingMode="HighQuality"/>
+            <!-- 在视图中添加一个图片，默认 Stretch="Uniform" 自动缩放至窗口大小，高质量展示图片质量 -->
+            <Image Name="DisplayImage" RenderOptions.BitmapScalingMode="HighQuality"/>
         </ScrollViewer>
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Bottom">
-        </StackPanel>
     </Grid>
 </UserControl>

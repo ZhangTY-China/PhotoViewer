@@ -1,6 +1,4 @@
-﻿using System.Configuration;
-using System.Data;
-using System.Windows;
+﻿using System.Windows;
 
 namespace PhotoViewer;
 
@@ -9,4 +7,16 @@ namespace PhotoViewer;
 /// </summary>
 public partial class App : Application
 {
+    private const Boolean DEBUG = true;
+    protected override void OnStartup(StartupEventArgs e)
+    {
+        base.OnStartup(e);
+
+        if (DEBUG)
+        {
+            Logger.OpenLoggerInTerminal();
+        }
+    }
+    
+
 }

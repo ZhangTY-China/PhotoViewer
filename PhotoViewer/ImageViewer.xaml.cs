@@ -16,15 +16,15 @@ namespace PhotoViewer
         public ImageViewer()
         {
             InitializeComponent();
-            this.Loaded += OnLoaded;
+            Loaded += OnLoaded;
         }
 
         private void OnLoaded(object sender, RoutedEventArgs routedEventArgs)
         {
-            this.Focusable = true;
+            Focusable = true;
             ImageScrollViewer.KeyUp += OnKeyDownHandler;
-            this.MouseWheel += OnMouseWheelHandler;
-            this.Focus();
+            MouseWheel += OnMouseWheelHandler;
+            Focus();
             
             // Prevent ScrollViewer from intercepting MouseWheel events
             ImageScrollViewer.PreviewMouseWheel += (s, e) =>

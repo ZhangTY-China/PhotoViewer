@@ -28,7 +28,7 @@ public partial class MainWindow : Window
         };
         
         // 订阅 Loaded 事件
-        imageViewer.Loaded += (sender, e) =>
+        imageViewer.Loaded += (_, _) =>
         {
             // 在这里调用你的函数
             imageViewer.LoadImages(imagePaths);

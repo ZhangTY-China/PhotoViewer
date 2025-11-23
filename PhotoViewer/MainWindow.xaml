@@ -5,16 +5,20 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:PhotoViewer"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="初始页面" Height="450" Width="800">
     <Grid>
+        <!-- Grid 分区：行分区 -->
         <Grid.RowDefinitions>
+            <!-- 第一行占据剩余空间高度 -->
             <RowDefinition Height="*"/>
+            <!-- 第二行根据内容自适应高度 -->
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- 这里可以放置主窗口的其他内容 -->
+        <!-- Grid 中的组件，位于第二行 -->
         <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center">
             <Button Content="View Images" Margin="10" Padding="10,5" Click="ViewImages_Click"/>
         </StackPanel>
     </Grid>
 </Window>
+

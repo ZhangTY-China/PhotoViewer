@@ -1,7 +1,7 @@
-using System;
 using System.IO;
-using System.Threading;
 using System.Collections.Concurrent;
+using System.Diagnostics;
+using System.Windows;
 
 namespace PhotoViewer;
 
@@ -142,6 +142,72 @@ public static class Logger
         }
     }
 
+    public static void OpenLoggerInTerminal()
+    {
+        var logFileName = Logger.LogFileName + DateTime.Now.ToString("yyyyMMdd") + ".log";
+        var logFilePath = Path.Combine(LogDirectory, logFileName);
+        
+        // 检查文件是否存在
+        if (!File.Exists(logFilePath))
+        {
+            MessageBox.Show($"日志文件不存在: {logFilePath}");
+            return;
+        }
+        
+        // 根据操作系统选择合适的命令
+        string command;
+        if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+        {
+            // Windows系统使用PowerShell的Get-Content命令
+            command = $"powershell -Command \"Get-Content '{logFilePath}' -Wait -Tail 20\"";
+        }
+        else
+        {
+            // Linux/Mac系统使用tail命令
+            command = $"tail -f '{logFilePath}'";
+        }
+        
+        ExecuteCommandInTerminal(command);
+    }
+    
+    /// <summary>
+    /// 在终端中执行命令
+    /// </summary>
+    /// <param name="command">要执行的命令</param>
+    private static void ExecuteCommandInTerminal(string command)
+    {
+        try
+        {
+            // 创建新的进程
+            ProcessStartInfo processInfo = new ProcessStartInfo();
+            
+            // 根据操作系统选择终端
+            if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+            {
+                // Windows系统
+                processInfo.FileName = "cmd.exe";
+                processInfo.Arguments = $"/c {command}";
+            }
+            else
+            {
+                // Linux/Mac系统
+                processInfo.FileName = "/bin/bash";
+                processInfo.Arguments = $"-c \"{command}\"";
+            }
+            
+            // 设置进程属性
+            processInfo.CreateNoWindow = false; // 显示终端窗口
+            processInfo.UseShellExecute = true;
+            
+            // 启动进程
+            Process.Start(processInfo);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"执行命令时出错: {ex.Message}");
+        }
+    }
+    
     private enum LogLevel
     {
         Debug,
