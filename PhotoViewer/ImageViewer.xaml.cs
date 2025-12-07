@@ -13,6 +13,9 @@ namespace PhotoViewer
         private int currentIndex = 0;
         private double zoomFactor = 1.0;
 
+        private Point _dragStartPosition;
+        private bool _isDragging = false;
+
         public ImageViewer()
         {
             InitializeComponent();
@@ -22,26 +25,13 @@ namespace PhotoViewer
         private void OnLoaded(object sender, RoutedEventArgs routedEventArgs)
         {
             Focusable = true;
-            ImageScrollViewer.KeyUp += OnKeyDownHandler;
-            MouseWheel += OnMouseWheelHandler;
             Focus();
             
-            // Prevent ScrollViewer from intercepting MouseWheel events
-            ImageScrollViewer.PreviewMouseWheel += (s, e) =>
-            {
-                if (!e.Handled)
-                {
-                    e.Handled = true;
-                    var eventArg = new MouseWheelEventArgs(e.MouseDevice, e.Timestamp, e.Delta);
-                    eventArg.RoutedEvent = MouseWheelEvent;
-                    eventArg.Source = s;
-                    this.RaiseEvent(eventArg);
-                }
-            };
-
-            ImageScrollViewer.PreviewMouseDown += OnMouseMiddleButtonDown;
+            KeyUp += OnKeyUpHandler;
+            ImageScrollViewer.PreviewMouseWheel += OnMouseWheelHandler;
+            ImageScrollViewer.PreviewMouseDown += OnMouseDown;
             ImageScrollViewer.MouseMove += OnMouseMove;
-            ImageScrollViewer.PreviewMouseUp += OnMouseMiddleButtonUp;
+            ImageScrollViewer.PreviewMouseUp += OnMouseUp;
         }
         
         public void LoadImages(List<string> paths)
@@ -71,56 +61,35 @@ namespace PhotoViewer
             
             DisplayImage.Width = ((BitmapImage)DisplayImage.Source).PixelWidth * zoomFactor;
             DisplayImage.Height = ((BitmapImage)DisplayImage.Source).PixelHeight * zoomFactor;
+            
+            // 确保控件获得焦点，以便接收鼠标滚轮事件
+            Focusable = true;
+            Focus();
         }
-
-        private void OnKeyDownHandler(object sender, KeyEventArgs e)
+        
+        private void MoveImageIndex(int i)
+        {
+            if (imagePaths.Count == 0) return;
+            currentIndex = (currentIndex + i + imagePaths.Count) % imagePaths.Count;
+            LoadImage(imagePaths[currentIndex]);
+        }
+        
+        private void OnKeyUpHandler(object sender, KeyEventArgs e)
         {
             Logger.i(TAG, "Key pressed: " + e.Key);
             switch (e.Key)
             {
                 case Key.Left:
-                    PreviousImage_Click(sender, e);
+                    MoveImageIndex(-1);
                     break;
                 case Key.Right:
-                    NextImage_Click(sender, e);
+                    MoveImageIndex(1);
                     break;
+                
             }
         }
 
-        private void PreviousImage_Click(object sender, RoutedEventArgs e)
-        {
-            if (imagePaths.Count == 0) return;
-
-            currentIndex = (currentIndex - 1 + imagePaths.Count) % imagePaths.Count;
-            LoadImage(imagePaths[currentIndex]);
-        }
-
-        private void NextImage_Click(object sender, RoutedEventArgs e)
-        {
-            if (imagePaths.Count == 0) return;
-
-            currentIndex = (currentIndex + 1) % imagePaths.Count;
-            LoadImage(imagePaths[currentIndex]);
-        }
-
-        private void ZoomIn_Click(object sender, RoutedEventArgs e)
-        {
-            zoomFactor *= 1.2;
-            DisplayImage.Width = ((BitmapImage)DisplayImage.Source).PixelWidth * zoomFactor;
-            DisplayImage.Height = ((BitmapImage)DisplayImage.Source).PixelHeight * zoomFactor;
-        }
-
-        private void ZoomOut_Click(object sender, RoutedEventArgs e)
-        {
-            zoomFactor /= 1.2;
-            DisplayImage.Width = ((BitmapImage)DisplayImage.Source).PixelWidth * zoomFactor;
-            DisplayImage.Height = ((BitmapImage)DisplayImage.Source).PixelHeight * zoomFactor;
-        }
-
-        private Point _dragStartPosition;
-        private bool _isDragging = false;
-
-        private void OnMouseMiddleButtonDown(object sender, MouseButtonEventArgs e)
+        private void OnMouseDown(object sender, MouseButtonEventArgs e)
         {
             if (e.LeftButton == MouseButtonState.Pressed)
             {
@@ -145,7 +114,7 @@ namespace PhotoViewer
             }
         }
 
-        private void OnMouseMiddleButtonUp(object sender, MouseButtonEventArgs e)
+        private void OnMouseUp(object sender, MouseButtonEventArgs e)
         {
             if (e.LeftButton == MouseButtonState.Released)
             {
@@ -157,10 +126,14 @@ namespace PhotoViewer
         private void OnMouseWheelHandler(object sender, MouseWheelEventArgs e)
         {
             Logger.i(TAG, "Mouse wheel event triggered with delta: " + e.Delta);
+            
+            // 如果按下了Ctrl键，执行缩放操作
             if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl))
             {
                 Logger.i(TAG, "Ctrl key is pressed, performing zoom");
                 Point mousePosition = e.GetPosition(DisplayImage);
+                Logger.i(TAG, "Offset (" + ImageScrollViewer.HorizontalOffset + ", " + ImageScrollViewer.VerticalOffset + ") | Viewport (" + ImageScrollViewer.ViewportHeight + ", " + ImageScrollViewer.ViewportWidth + ") | mouse (" + mousePosition.X + ", " + mousePosition.Y + ")");
+
                 double scale = e.Delta > 0 ? 1.1 : 0.9; // 调整回缩比例为 0.9
                 zoomFactor *= scale;
 
@@ -181,9 +154,13 @@ namespace PhotoViewer
                 DisplayImage.BeginAnimation(HeightProperty, heightAnimation);
 
                 // Calculate the new scroll position relative to the mouse position
-                double newHorizontalOffset = (mousePosition.X * scale - ImageScrollViewer.ViewportWidth / 2) + (ImageScrollViewer.HorizontalOffset - mousePosition.X) * (scale - 1);
-                double newVerticalOffset = (mousePosition.Y * scale - ImageScrollViewer.ViewportHeight / 2) + (ImageScrollViewer.VerticalOffset - mousePosition.Y) * (scale - 1);
+                // double newHorizontalOffset = (mousePosition.X * scale - ImageScrollViewer.ViewportWidth / 2) + (ImageScrollViewer.HorizontalOffset - mousePosition.X) * (scale - 1);
+                // double newVerticalOffset = (mousePosition.Y * scale - ImageScrollViewer.ViewportHeight / 2) + (ImageScrollViewer.VerticalOffset - mousePosition.Y) * (scale - 1);
 
+                double newVerticalOffset = scale * ImageScrollViewer.VerticalOffset + (1 - scale) * (ImageScrollViewer.ViewportHeight / 2 - mousePosition.Y);
+                double newHorizontalOffset = scale * ImageScrollViewer.HorizontalOffset + (1 - scale) * (ImageScrollViewer.ViewportWidth / 2 - mousePosition.X);
+                Logger.i(TAG, "new Offset (" + newHorizontalOffset + ", " + newVerticalOffset + ")   ");
+                
                 // Apply smooth scrolling animation
                 DoubleAnimation horizontalScrollAnimation = new DoubleAnimation(
                     newHorizontalOffset,
@@ -195,6 +172,15 @@ namespace PhotoViewer
                 verticalScrollAnimation.EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut };
                 ImageScrollViewer.BeginAnimation(ScrollViewerBehavior.HorizontalOffsetProperty, horizontalScrollAnimation);
                 ImageScrollViewer.BeginAnimation(ScrollViewerBehavior.VerticalOffsetProperty, verticalScrollAnimation);
+                
+                // 标记事件已处理，防止ScrollViewer处理滚动
+                e.Handled = true;
+            }
+            else
+            {
+                // 如果没有按下Ctrl键，让ScrollViewer处理正常的滚动
+                // 不设置e.Handled = true，让事件继续传递
+                Logger.i(TAG, "No Ctrl key, allowing normal scrolling");
             }
         }
     }
