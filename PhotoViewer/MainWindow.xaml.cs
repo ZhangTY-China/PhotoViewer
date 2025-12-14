@@ -22,7 +22,7 @@ public partial class MainWindow : Window
         // 模拟一些图片路径 - 实际应用中可以从文件对话框或数据库获取
         var imagePaths = new List<string>
         {
-            "F:\\Shot By Z5Ⅱ\\20250726\\DSC_0055.JPG",
+            "F:\\Shot By Z5Ⅱ\\成片\\DSC_2409.jpg",
             "F:\\Shot By Z5Ⅱ\\20250726\\DSC_0068.JPG",
             "F:\\Shot By Z5Ⅱ\\20251001_无锡\\DSC_1176.JPG",
         };

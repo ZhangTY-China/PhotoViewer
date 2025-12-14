@@ -12,9 +12,13 @@ namespace PhotoViewer
         private List<string> imagePaths = new List<string>();
         private int currentIndex = 0;
         private double zoomFactor = 1.0;
+        private double initialZoomFactor = 1.0; // 记录初始缩放倍率
 
         private Point _dragStartPosition;
         private bool _isDragging = false;
+        
+        // 添加标志来跟踪动画是否正在进行
+        private bool _isAnimating = false;
 
         public ImageViewer()
         {
@@ -58,6 +62,9 @@ namespace PhotoViewer
                 ImageScrollViewer.ActualWidth / bitmap.PixelWidth,
                 ImageScrollViewer.ActualHeight / bitmap.PixelHeight
             );
+            
+            // 记录初始缩放倍率
+            initialZoomFactor = zoomFactor;
             
             DisplayImage.Width = ((BitmapImage)DisplayImage.Source).PixelWidth * zoomFactor;
             DisplayImage.Height = ((BitmapImage)DisplayImage.Source).PixelHeight * zoomFactor;
@@ -131,47 +138,50 @@ namespace PhotoViewer
             if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl))
             {
                 Logger.i(TAG, "Ctrl key is pressed, performing zoom");
-                Point mousePosition = e.GetPosition(DisplayImage);
-                Logger.i(TAG, "Offset (" + ImageScrollViewer.HorizontalOffset + ", " + ImageScrollViewer.VerticalOffset + ") | Viewport (" + ImageScrollViewer.ViewportHeight + ", " + ImageScrollViewer.ViewportWidth + ") | mouse (" + mousePosition.X + ", " + mousePosition.Y + ")");
-
+                
                 double scale = e.Delta > 0 ? 1.1 : 0.9; // 调整回缩比例为 0.9
-                zoomFactor *= scale;
-
-                // Calculate the center of the zoom relative to the image
-                double imageCenterX = mousePosition.X * zoomFactor;
-                double imageCenterY = mousePosition.Y * zoomFactor;
-
-                // Smoothly animate width and height changes
-                DoubleAnimation widthAnimation = new DoubleAnimation(
-                    ((BitmapImage)DisplayImage.Source).PixelWidth * zoomFactor,
-                    new Duration(TimeSpan.FromMilliseconds(200)));
-                DoubleAnimation heightAnimation = new DoubleAnimation(
-                    ((BitmapImage)DisplayImage.Source).PixelHeight * zoomFactor,
-                    new Duration(TimeSpan.FromMilliseconds(200)));
-                widthAnimation.EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut };
-                heightAnimation.EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut };
-                DisplayImage.BeginAnimation(WidthProperty, widthAnimation);
-                DisplayImage.BeginAnimation(HeightProperty, heightAnimation);
-
-                // Calculate the new scroll position relative to the mouse position
-                // double newHorizontalOffset = (mousePosition.X * scale - ImageScrollViewer.ViewportWidth / 2) + (ImageScrollViewer.HorizontalOffset - mousePosition.X) * (scale - 1);
-                // double newVerticalOffset = (mousePosition.Y * scale - ImageScrollViewer.ViewportHeight / 2) + (ImageScrollViewer.VerticalOffset - mousePosition.Y) * (scale - 1);
-
-                double newVerticalOffset = scale * ImageScrollViewer.VerticalOffset + (1 - scale) * (ImageScrollViewer.ViewportHeight / 2 - mousePosition.Y);
-                double newHorizontalOffset = scale * ImageScrollViewer.HorizontalOffset + (1 - scale) * (ImageScrollViewer.ViewportWidth / 2 - mousePosition.X);
+                
+                // 计算新的缩放因子
+                double newZoomFactor = zoomFactor * scale;
+                
+                // 限制缩放倍率不小于初始倍率（不能比原始倍率更小）
+                if (newZoomFactor < initialZoomFactor)
+                {
+                    Logger.i(TAG, "Zoom factor would be smaller than initial zoom factor, limiting to initial zoom factor");
+                    newZoomFactor = initialZoomFactor;
+                }
+                
+                // 如果缩放因子没有变化，则不执行任何操作
+                if (Math.Abs(newZoomFactor - zoomFactor) < 0.001)
+                {
+                    Logger.i(TAG, "Zoom factor unchanged, skipping zoom operation");
+                    e.Handled = true;
+                    return;
+                }
+                
+                // 获取当前鼠标在ScrollViewer中的位置
+                Point mousePositionInScrollViewer = e.GetPosition(ImageScrollViewer);
+                
+                // 计算鼠标在图片中的相对位置（考虑当前缩放和滚动偏移）
+                double relativeX = (ImageScrollViewer.HorizontalOffset + mousePositionInScrollViewer.X) / zoomFactor;
+                double relativeY = (ImageScrollViewer.VerticalOffset + mousePositionInScrollViewer.Y) / zoomFactor;
+                
+                // 更新缩放因子
+                zoomFactor = newZoomFactor;
+                
+                // 直接设置图片大小，不使用动画
+                DisplayImage.Width = ((BitmapImage)DisplayImage.Source).PixelWidth * zoomFactor;
+                DisplayImage.Height = ((BitmapImage)DisplayImage.Source).PixelHeight * zoomFactor;
+                
+                // 计算新的滚动位置，确保鼠标指向的图片内容位置不变
+                double newHorizontalOffset = relativeX * zoomFactor - mousePositionInScrollViewer.X;
+                double newVerticalOffset = relativeY * zoomFactor - mousePositionInScrollViewer.Y;
+                
                 Logger.i(TAG, "new Offset (" + newHorizontalOffset + ", " + newVerticalOffset + ")   ");
                 
-                // Apply smooth scrolling animation
-                DoubleAnimation horizontalScrollAnimation = new DoubleAnimation(
-                    newHorizontalOffset,
-                    new Duration(TimeSpan.FromMilliseconds(200)));
-                DoubleAnimation verticalScrollAnimation = new DoubleAnimation(
-                    newVerticalOffset,
-                    new Duration(TimeSpan.FromMilliseconds(200)));
-                horizontalScrollAnimation.EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut };
-                verticalScrollAnimation.EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut };
-                ImageScrollViewer.BeginAnimation(ScrollViewerBehavior.HorizontalOffsetProperty, horizontalScrollAnimation);
-                ImageScrollViewer.BeginAnimation(ScrollViewerBehavior.VerticalOffsetProperty, verticalScrollAnimation);
+                // 直接设置滚动位置，不使用动画
+                ImageScrollViewer.ScrollToHorizontalOffset(newHorizontalOffset);
+                ImageScrollViewer.ScrollToVerticalOffset(newVerticalOffset);
                 
                 // 标记事件已处理，防止ScrollViewer处理滚动
                 e.Handled = true;
