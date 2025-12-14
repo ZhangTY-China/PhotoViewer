@@ -11,7 +11,11 @@
         <!-- 增加一个图片查看视图，并指定该视图可以被垂直、水平滚动 -->
         <ScrollViewer Name="ImageScrollViewer" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
             <!-- 在视图中添加一个图片，默认 Stretch="Uniform" 自动缩放至窗口大小，高质量展示图片质量 -->
-            <Image Name="DisplayImage" RenderOptions.BitmapScalingMode="HighQuality"/>
+            <Image Name="DisplayImage" 
+                   RenderOptions.BitmapScalingMode="HighQuality" 
+                   RenderOptions.EdgeMode="Aliased"
+                   SnapsToDevicePixels="True"
+                   Stretch="Uniform"/>
         </ScrollViewer>
     </Grid>
 </UserControl>

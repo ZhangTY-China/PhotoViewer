@@ -54,20 +54,30 @@ namespace PhotoViewer
             var bitmap = new BitmapImage();
             bitmap.BeginInit();
             bitmap.UriSource = new Uri(path);
-            bitmap.DecodePixelWidth = (int)ImageScrollViewer.ActualWidth;
+            // 移除DecodePixelWidth限制，让图片以原始分辨率加载
+            // 添加缓存选项以提高性能
+            bitmap.CacheOption = BitmapCacheOption.OnLoad;
+            // 确保图片以高质量加载
+            bitmap.CreateOptions = BitmapCreateOptions.PreservePixelFormat;
             bitmap.EndInit();
+            // 确保图片数据完全加载
+            bitmap.Freeze();
             DisplayImage.Source = bitmap;
 
-            zoomFactor = Math.Min(
-                ImageScrollViewer.ActualWidth / bitmap.PixelWidth,
-                ImageScrollViewer.ActualHeight / bitmap.PixelHeight
-            );
-            
-            // 记录初始缩放倍率
-            initialZoomFactor = zoomFactor;
-            
-            DisplayImage.Width = ((BitmapImage)DisplayImage.Source).PixelWidth * zoomFactor;
-            DisplayImage.Height = ((BitmapImage)DisplayImage.Source).PixelHeight * zoomFactor;
+            // 计算适合窗口的初始缩放比例
+            if (bitmap.PixelWidth > 0 && bitmap.PixelHeight > 0)
+            {
+                zoomFactor = Math.Min(
+                    ImageScrollViewer.ActualWidth / bitmap.PixelWidth,
+                    ImageScrollViewer.ActualHeight / bitmap.PixelHeight
+                );
+                
+                // 记录初始缩放倍率
+                initialZoomFactor = zoomFactor;
+                
+                DisplayImage.Width = bitmap.PixelWidth * zoomFactor;
+                DisplayImage.Height = bitmap.PixelHeight * zoomFactor;
+            }
             
             // 确保控件获得焦点，以便接收鼠标滚轮事件
             Focusable = true;
