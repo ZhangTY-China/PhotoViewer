@@ -143,65 +143,52 @@ namespace PhotoViewer
         private void OnMouseWheelHandler(object sender, MouseWheelEventArgs e)
         {
             Logger.i(TAG, "Mouse wheel event triggered with delta: " + e.Delta);
+            double scale = e.Delta > 0 ? 1.1 : 0.9; // 调整回缩比例为 0.9
             
-            // 如果按下了Ctrl键，执行缩放操作
-            if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl))
+            // 计算新的缩放因子
+            double newZoomFactor = zoomFactor * scale;
+            
+            // 限制缩放倍率不小于初始倍率（不能比原始倍率更小）
+            if (newZoomFactor < initialZoomFactor)
             {
-                Logger.i(TAG, "Ctrl key is pressed, performing zoom");
-                
-                double scale = e.Delta > 0 ? 1.1 : 0.9; // 调整回缩比例为 0.9
-                
-                // 计算新的缩放因子
-                double newZoomFactor = zoomFactor * scale;
-                
-                // 限制缩放倍率不小于初始倍率（不能比原始倍率更小）
-                if (newZoomFactor < initialZoomFactor)
-                {
-                    Logger.i(TAG, "Zoom factor would be smaller than initial zoom factor, limiting to initial zoom factor");
-                    newZoomFactor = initialZoomFactor;
-                }
-                
-                // 如果缩放因子没有变化，则不执行任何操作
-                if (Math.Abs(newZoomFactor - zoomFactor) < 0.001)
-                {
-                    Logger.i(TAG, "Zoom factor unchanged, skipping zoom operation");
-                    e.Handled = true;
-                    return;
-                }
-                
-                // 获取当前鼠标在ScrollViewer中的位置
-                Point mousePositionInScrollViewer = e.GetPosition(ImageScrollViewer);
-                
-                // 计算鼠标在图片中的相对位置（考虑当前缩放和滚动偏移）
-                double relativeX = (ImageScrollViewer.HorizontalOffset + mousePositionInScrollViewer.X) / zoomFactor;
-                double relativeY = (ImageScrollViewer.VerticalOffset + mousePositionInScrollViewer.Y) / zoomFactor;
-                
-                // 更新缩放因子
-                zoomFactor = newZoomFactor;
-                
-                // 直接设置图片大小，不使用动画
-                DisplayImage.Width = ((BitmapImage)DisplayImage.Source).PixelWidth * zoomFactor;
-                DisplayImage.Height = ((BitmapImage)DisplayImage.Source).PixelHeight * zoomFactor;
-                
-                // 计算新的滚动位置，确保鼠标指向的图片内容位置不变
-                double newHorizontalOffset = relativeX * zoomFactor - mousePositionInScrollViewer.X;
-                double newVerticalOffset = relativeY * zoomFactor - mousePositionInScrollViewer.Y;
-                
-                Logger.i(TAG, "new Offset (" + newHorizontalOffset + ", " + newVerticalOffset + ")   ");
-                
-                // 直接设置滚动位置，不使用动画
-                ImageScrollViewer.ScrollToHorizontalOffset(newHorizontalOffset);
-                ImageScrollViewer.ScrollToVerticalOffset(newVerticalOffset);
-                
-                // 标记事件已处理，防止ScrollViewer处理滚动
+                Logger.i(TAG, "Zoom factor would be smaller than initial zoom factor, limiting to initial zoom factor");
+                newZoomFactor = initialZoomFactor;
+            }
+            
+            // 如果缩放因子没有变化，则不执行任何操作
+            if (Math.Abs(newZoomFactor - zoomFactor) < 0.001)
+            {
+                Logger.i(TAG, "Zoom factor unchanged, skipping zoom operation");
                 e.Handled = true;
+                return;
             }
-            else
-            {
-                // 如果没有按下Ctrl键，让ScrollViewer处理正常的滚动
-                // 不设置e.Handled = true，让事件继续传递
-                Logger.i(TAG, "No Ctrl key, allowing normal scrolling");
-            }
+            
+            // 获取当前鼠标在ScrollViewer中的位置
+            Point mousePositionInScrollViewer = e.GetPosition(ImageScrollViewer);
+            
+            // 计算鼠标在图片中的相对位置（考虑当前缩放和滚动偏移）
+            double relativeX = (ImageScrollViewer.HorizontalOffset + mousePositionInScrollViewer.X) / zoomFactor;
+            double relativeY = (ImageScrollViewer.VerticalOffset + mousePositionInScrollViewer.Y) / zoomFactor;
+            
+            // 更新缩放因子
+            zoomFactor = newZoomFactor;
+            
+            // 直接设置图片大小，不使用动画
+            DisplayImage.Width = ((BitmapImage)DisplayImage.Source).PixelWidth * zoomFactor;
+            DisplayImage.Height = ((BitmapImage)DisplayImage.Source).PixelHeight * zoomFactor;
+            
+            // 计算新的滚动位置，确保鼠标指向的图片内容位置不变
+            double newHorizontalOffset = relativeX * zoomFactor - mousePositionInScrollViewer.X;
+            double newVerticalOffset = relativeY * zoomFactor - mousePositionInScrollViewer.Y;
+            
+            Logger.i(TAG, "new Offset (" + newHorizontalOffset + ", " + newVerticalOffset + ")   ");
+            
+            // 直接设置滚动位置，不使用动画
+            ImageScrollViewer.ScrollToHorizontalOffset(newHorizontalOffset);
+            ImageScrollViewer.ScrollToVerticalOffset(newVerticalOffset);
+            
+            // 标记事件已处理，防止ScrollViewer处理滚动
+            e.Handled = true;
         }
     }
 }
