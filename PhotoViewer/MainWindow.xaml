@@ -3,7 +3,6 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:PhotoViewer"
         mc:Ignorable="d"
         Title="初始页面" Height="450" Width="800">
     <Grid>
@@ -16,7 +15,13 @@
         </Grid.RowDefinitions>
 
         <!-- Grid 中的组件，位于第二行 -->
-        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center">
+        <StackPanel Grid.Row="1" Orientation="Vertical" HorizontalAlignment="Center" Margin="10">
+            <!-- 路径选择器区域 -->
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,10">
+                <TextBox x:Name="FolderPathTextBox" Width="400" Margin="0,0,10,0" Text="请选择一个包含图片的文件夹路径"/>
+                <Button Content="浏览" Padding="10,5" Click="BrowseFolder_Click"/>
+            </StackPanel>
+            <!-- 查看图片按钮 -->
             <Button Content="View Images" Margin="10" Padding="10,5" Click="ViewImages_Click"/>
         </StackPanel>
     </Grid>

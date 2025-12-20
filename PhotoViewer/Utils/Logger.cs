@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Windows;
 
-namespace PhotoViewer;
+namespace PhotoViewer.Utils;
 
 public static class Logger
 {
