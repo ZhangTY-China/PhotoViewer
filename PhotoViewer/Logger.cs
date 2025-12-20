@@ -150,8 +150,17 @@ public static class Logger
         // 检查文件是否存在
         if (!File.Exists(logFilePath))
         {
-            MessageBox.Show($"日志文件不存在: {logFilePath}");
-            return;
+            try
+            {
+                // 创建日志文件和目录（如果不存在）
+                Directory.CreateDirectory(LogDirectory);
+                File.WriteAllText(logFilePath, $"日志文件已创建: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"无法创建日志文件: {ex.Message}");
+                return;
+            }
         }
         
         // 根据操作系统选择合适的命令
