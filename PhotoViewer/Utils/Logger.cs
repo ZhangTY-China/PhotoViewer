@@ -8,9 +8,7 @@ namespace PhotoViewer.Utils;
 public static class Logger
 {
     private static readonly string LogDirectory = Path.GetFullPath("C:\\PhotoViewerLogs");
-    private const long MaxFileSize = 512 * 1024 * 1024; // 5MB
     private const string LogFileName = "photoviewer_";
-    private const int MaxBackupFiles = 10;
     private static readonly BlockingCollection<string> LogQueue = new();
     private static readonly Thread LogThread;
 
@@ -25,28 +23,28 @@ public static class Logger
         };
         LogThread.Start();
 
-        AppDomain.CurrentDomain.ProcessExit += (s, e) => Shutdown();
+        AppDomain.CurrentDomain.ProcessExit += (_, _) => Shutdown();
     }
 
-    public static void Shutdown()
+    private static void Shutdown()
     {
         LogQueue.CompleteAdding();
-        LogThread?.Join(1000);
+        LogThread.Join(1000);
     }
 
-    public static void i(string tag, string message)
+    public static void I(string tag, string message)
     {
         Log(tag, message, LogLevel.Info);
     }
-    public static void e(string tag, string message)
+    public static void E(string tag, string message)
     {
         Log(tag, message, LogLevel.Error);
     }
-    public static void d(string tag, string message)
+    public static void D(string tag, string message)
     {
         Log(tag, message, LogLevel.Debug);
     }
-    public static void w(string tag, string message)
+    public static void W(string tag, string message)
     {
         Log(tag, message, LogLevel.Warning);
     }
@@ -72,8 +70,8 @@ public static class Logger
 
     private static void ProcessLogQueue()
     {
-        var LogFileName = Logger.LogFileName + DateTime.Now.ToString("yyyyMMdd") + ".log";
-        var logPath = Path.Combine(LogDirectory, LogFileName);
+        var logFileName = LogFileName + DateTime.Now.ToString("yyyyMMdd") + ".log";
+        var logPath = Path.Combine(LogDirectory, logFileName);
 
         foreach (var logEntry in LogQueue.GetConsumingEnumerable())
         {
@@ -97,48 +95,6 @@ public static class Logger
                 }
                 catch { /* 防止无限循环 */ }
             }
-        }
-    }
-
-    private static void RotateLogFiles()
-    {
-        try
-        {
-            var LogFileName = Logger.LogFileName + DateTime.Now.ToString("yyyyMMdd") + ".log";
-            // 删除最旧的备份文件
-            var oldestBackup = Path.Combine(LogDirectory, $"{LogFileName}.{MaxBackupFiles}");
-            if (File.Exists(oldestBackup))
-            {
-                File.Delete(oldestBackup);
-            }
-
-            // 重命名其他备份文件
-            for (int i = MaxBackupFiles - 1; i >= 1; i--)
-            {
-                var oldFile = Path.Combine(LogDirectory, $"{LogFileName}.{i}");
-                var newFile = Path.Combine(LogDirectory, $"{LogFileName}.{i + 1}");
-                if (File.Exists(oldFile))
-                {
-                    File.Move(oldFile, newFile);
-                }
-            }
-
-            // 重命名当前日志文件
-            var currentLog = Path.Combine(LogDirectory, LogFileName);
-            var firstBackup = Path.Combine(LogDirectory, $"{LogFileName}.1");
-            if (File.Exists(currentLog))
-            {
-                File.Move(currentLog, firstBackup);
-            }
-        }
-        catch (Exception ex)
-        {
-            try
-            {
-                File.AppendAllText(Path.Combine(LogDirectory, "logger_error.log"), 
-                    $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} [LoggerError] Rotate failed: {ex}{Environment.NewLine}");
-            }
-            catch { /* 防止无限循环 */ }
         }
     }
 

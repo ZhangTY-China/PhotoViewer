@@ -6,14 +6,14 @@ namespace PhotoViewer;
 /// <summary>
 /// Interaction logic for App.xaml
 /// </summary>
-public partial class App : Application
+public partial class App
 {
-    private const Boolean DEBUG = true;
+    private const Boolean Debug = true;
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
 
-        if (DEBUG)
+        if (Debug)
         {
             Logger.OpenLoggerInTerminal();
         }

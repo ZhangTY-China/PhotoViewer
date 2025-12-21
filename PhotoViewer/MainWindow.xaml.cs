@@ -7,12 +7,12 @@ namespace PhotoViewer;
 /// <summary>
 /// Interaction logic for MainWindow.xaml
 /// </summary>
-public partial class MainWindow : Window
+public partial class MainWindow
 {
-    private const string Tag = "MainWindow";
+    private new const string Tag = "MainWindow";
     public MainWindow()
     {
-        Logger.i(Tag, "App init");
+        Logger.I(Tag, "App init");
         InitializeComponent();
     }
 
@@ -28,7 +28,7 @@ public partial class MainWindow : Window
         // 检查路径是否有效
         if (string.IsNullOrWhiteSpace(folderPath) || folderPath.Equals("请选择一个包含图片的文件夹路径") || !Directory.Exists(folderPath))
         {
-            Logger.e(Tag, $"ViewImage_Click path invalid, path = {folderPath}");
+            Logger.E(Tag, $"ViewImage_Click path invalid, path = {folderPath}");
             return;
         }
 
@@ -38,7 +38,7 @@ public partial class MainWindow : Window
         try
         {
             // 递归查找所有图片文件
-            var files = Directory.GetFiles(folderPath!, "*.*", SearchOption.AllDirectories)
+            var files = Directory.GetFiles(folderPath, "*.*", SearchOption.AllDirectories)
                 .Where(file => ToolUtils.PhotoTypes.Contains(Path.GetExtension(file).ToLowerInvariant()))
                 .ToList();
 
@@ -46,7 +46,7 @@ public partial class MainWindow : Window
 
             if (imagePaths.Count == 0)
             {
-                Logger.e(Tag,$"ViewImage_Click no photos in folder {folderPath}");
+                Logger.E(Tag,$"ViewImage_Click no photos in folder {folderPath}");
                 return;
             }
 
@@ -73,7 +73,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            Logger.e(Tag,$"ViewImage_Click catch exception {ex.Message}");
+            Logger.E(Tag,$"ViewImage_Click catch exception {ex.Message}");
         }
     }
 }

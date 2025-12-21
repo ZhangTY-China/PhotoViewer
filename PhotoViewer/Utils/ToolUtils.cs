@@ -1,5 +1,3 @@
-using System.Windows;
-
 namespace PhotoViewer.Utils;
 
 public static class ToolUtils
@@ -23,11 +21,11 @@ public static class ToolUtils
                 // 获取所选文件所在目录
                 return openFileDialog.FolderName;
             }
-            Logger.e(Tag, "OpenFolderDialog ShowDialog = false");
+            Logger.E(Tag, "OpenFolderDialog ShowDialog = false");
         }
         catch (Exception ex)
         {
-            Logger.e(Tag, $"OpenFolderDialog catch exception = {ex.Message}");
+            Logger.E(Tag, $"OpenFolderDialog catch exception = {ex.Message}");
         }
 
         return "";

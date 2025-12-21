@@ -1,24 +1,21 @@
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
 using PhotoViewer.Utils;
 
 namespace PhotoViewer
 {
-    public partial class ImageViewer : UserControl
+    public partial class ImageViewer
     {
-        private const string TAG = "ImageViewer";
-        private List<string> imagePaths = new List<string>();
-        private int currentIndex = 0;
-        private double zoomFactor = 1.0;
-        private double initialZoomFactor = 1.0; // 记录初始缩放倍率
+        private new const string Tag = "ImageViewer";
+        private List<string> _imagePaths = new List<string>();
+        private int _currentIndex;
+        private double _zoomFactor = 1.0;
+        private double _maxZoomFactor = 1.0; // 记录初始缩放倍率
 
         private Point _dragStartPosition;
-        private bool _isDragging = false;
-        
-        // 添加标志来跟踪动画是否正在进行
-        private bool _isAnimating = false;
+        private bool _isDragging;
+
 
         public ImageViewer()
         {
@@ -40,17 +37,17 @@ namespace PhotoViewer
         
         public void LoadImages(List<string> paths)
         {
-            Logger.i(TAG, "load image paths = " + paths);
-            imagePaths = paths;
-            if (imagePaths.Count > 0)
+            Logger.I(Tag, "load image paths = " + paths);
+            _imagePaths = paths;
+            if (_imagePaths.Count > 0)
             {
-                LoadImage(imagePaths[0]);
+                LoadImage(_imagePaths[0]);
             }
         }
 
         private void LoadImage(String path)
         {
-            Logger.i(TAG, "load image path = " + path);
+            Logger.I(Tag, "load image path = " + path);
             var bitmap = new BitmapImage();
             bitmap.BeginInit();
             bitmap.UriSource = new Uri(path);
@@ -67,16 +64,16 @@ namespace PhotoViewer
             // 计算适合窗口的初始缩放比例
             if (bitmap.PixelWidth > 0 && bitmap.PixelHeight > 0)
             {
-                zoomFactor = Math.Min(
+                _zoomFactor = Math.Min(
                     ImageScrollViewer.ActualWidth / bitmap.PixelWidth,
                     ImageScrollViewer.ActualHeight / bitmap.PixelHeight
                 );
                 
                 // 记录初始缩放倍率
-                initialZoomFactor = zoomFactor;
+                _maxZoomFactor = _zoomFactor;
                 
-                DisplayImage.Width = bitmap.PixelWidth * zoomFactor;
-                DisplayImage.Height = bitmap.PixelHeight * zoomFactor;
+                DisplayImage.Width = bitmap.PixelWidth * _zoomFactor;
+                DisplayImage.Height = bitmap.PixelHeight * _zoomFactor;
             }
             
             // 确保控件获得焦点，以便接收鼠标滚轮事件
@@ -86,14 +83,14 @@ namespace PhotoViewer
         
         private void MoveImageIndex(int i)
         {
-            if (imagePaths.Count == 0) return;
-            currentIndex = (currentIndex + i + imagePaths.Count) % imagePaths.Count;
-            LoadImage(imagePaths[currentIndex]);
+            if (_imagePaths.Count == 0) return;
+            _currentIndex = (_currentIndex + i + _imagePaths.Count) % _imagePaths.Count;
+            LoadImage(_imagePaths[_currentIndex]);
         }
         
         private void OnKeyUpHandler(object sender, KeyEventArgs e)
         {
-            Logger.i(TAG, "Key pressed: " + e.Key);
+            Logger.I(Tag, "Key pressed: " + e.Key);
             switch (e.Key)
             {
                 case Key.Left:
@@ -142,23 +139,23 @@ namespace PhotoViewer
 
         private void OnMouseWheelHandler(object sender, MouseWheelEventArgs e)
         {
-            Logger.i(TAG, "Mouse wheel event triggered with delta: " + e.Delta);
+            Logger.I(Tag, "Mouse wheel event triggered with delta: " + e.Delta);
             double scale = e.Delta > 0 ? 1.1 : 0.9; // 调整回缩比例为 0.9
             
             // 计算新的缩放因子
-            double newZoomFactor = zoomFactor * scale;
+            double newZoomFactor = _zoomFactor * scale;
             
             // 限制缩放倍率不小于初始倍率（不能比原始倍率更小）
-            if (newZoomFactor < initialZoomFactor)
+            if (newZoomFactor < _maxZoomFactor)
             {
-                Logger.i(TAG, "Zoom factor would be smaller than initial zoom factor, limiting to initial zoom factor");
-                newZoomFactor = initialZoomFactor;
+                Logger.I(Tag, "Zoom factor would be smaller than initial zoom factor, limiting to initial zoom factor");
+                newZoomFactor = _maxZoomFactor;
             }
             
             // 如果缩放因子没有变化，则不执行任何操作
-            if (Math.Abs(newZoomFactor - zoomFactor) < 0.001)
+            if (Math.Abs(newZoomFactor - _zoomFactor) < 0.001)
             {
-                Logger.i(TAG, "Zoom factor unchanged, skipping zoom operation");
+                Logger.I(Tag, "Zoom factor unchanged, skipping zoom operation");
                 e.Handled = true;
                 return;
             }
@@ -167,21 +164,21 @@ namespace PhotoViewer
             Point mousePositionInScrollViewer = e.GetPosition(ImageScrollViewer);
             
             // 计算鼠标在图片中的相对位置（考虑当前缩放和滚动偏移）
-            double relativeX = (ImageScrollViewer.HorizontalOffset + mousePositionInScrollViewer.X) / zoomFactor;
-            double relativeY = (ImageScrollViewer.VerticalOffset + mousePositionInScrollViewer.Y) / zoomFactor;
+            double relativeX = (ImageScrollViewer.HorizontalOffset + mousePositionInScrollViewer.X) / _zoomFactor;
+            double relativeY = (ImageScrollViewer.VerticalOffset + mousePositionInScrollViewer.Y) / _zoomFactor;
             
             // 更新缩放因子
-            zoomFactor = newZoomFactor;
+            _zoomFactor = newZoomFactor;
             
             // 直接设置图片大小，不使用动画
-            DisplayImage.Width = ((BitmapImage)DisplayImage.Source).PixelWidth * zoomFactor;
-            DisplayImage.Height = ((BitmapImage)DisplayImage.Source).PixelHeight * zoomFactor;
+            DisplayImage.Width = ((BitmapImage)DisplayImage.Source).PixelWidth * _zoomFactor;
+            DisplayImage.Height = ((BitmapImage)DisplayImage.Source).PixelHeight * _zoomFactor;
             
             // 计算新的滚动位置，确保鼠标指向的图片内容位置不变
-            double newHorizontalOffset = relativeX * zoomFactor - mousePositionInScrollViewer.X;
-            double newVerticalOffset = relativeY * zoomFactor - mousePositionInScrollViewer.Y;
+            double newHorizontalOffset = relativeX * _zoomFactor - mousePositionInScrollViewer.X;
+            double newVerticalOffset = relativeY * _zoomFactor - mousePositionInScrollViewer.Y;
             
-            Logger.i(TAG, "new Offset (" + newHorizontalOffset + ", " + newVerticalOffset + ")   ");
+            Logger.I(Tag, "new Offset (" + newHorizontalOffset + ", " + newVerticalOffset + ")   ");
             
             // 直接设置滚动位置，不使用动画
             ImageScrollViewer.ScrollToHorizontalOffset(newHorizontalOffset);
